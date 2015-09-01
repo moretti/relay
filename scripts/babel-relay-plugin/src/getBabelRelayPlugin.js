@@ -15,7 +15,6 @@ var buildClientSchema =
 
 var assert = require('assert');
 var path = require('path');
-var util = require('babel-core').util;
 
 var PROVIDES_MODULE = 'providesModule';
 
@@ -53,7 +52,9 @@ function getBabelRelayPlugin(
 ) /*: Object */ {
   return function(babel) {
     var Plugin = babel.Plugin;
+    var parse = babel.parse;
     var t = babel.types;
+    var traverse = babel.traverse;
     return new Plugin('relay-query', {
       visitor: {
         /**
@@ -177,7 +178,9 @@ function getBabelRelayPlugin(
             }
           }
           code = '(' + code + ')';
-          var funcExpr = util.parseTemplate('Relay.QL', code).body[0].expression;
+          var ast = parse(code, {loc: 'Relay.QL', looseModules: true}).program;
+          ast = traverse.removeProperties(ast);
+          var funcExpr = ast.body[0].expression;
 
           // Immediately invoke the function with substitutions as arguments.
           var substitutions = node.quasi.expressions;
